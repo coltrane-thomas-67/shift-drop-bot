@@ -2,7 +2,7 @@
 
 Supreme/sneaker-drop energy, applied to gig shifts. This watches a
 login-gated shift board for a side hustle of mine and texts me the second a
-new opening drops — no more frantically refreshing a tab all day hoping to
+new opening drops no more frantically refreshing a tab all day hoping to
 catch one before someone else does. $0 to run: headless browser automation
 for checking, a free email-to-SMS relay for the text, a JSON file for state.
 
