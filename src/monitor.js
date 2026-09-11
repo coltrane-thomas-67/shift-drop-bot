@@ -6,13 +6,13 @@ function hashRow(text) {
   return crypto.createHash('sha1').update(text).digest('hex');
 }
 
-async function fetchAppointments(page) {
-  const { SMN_APPOINTMENTS_URL } = process.env;
-  await page.goto(SMN_APPOINTMENTS_URL, { waitUntil: 'networkidle2' });
+async function fetchShifts(page) {
+  const { SITE_SHIFTS_URL } = process.env;
+  await page.goto(SITE_SHIFTS_URL, { waitUntil: 'networkidle2' });
 
-  const { rowSelector, idAttribute, fields } = selectors.appointments;
+  const { rowSelector, idAttribute, fields } = selectors.shifts;
 
-  const appointments = await page.$$eval(
+  const shifts = await page.$$eval(
     rowSelector,
     (rows, idAttribute, fields) => {
       return rows.map((row) => {
@@ -35,22 +35,22 @@ async function fetchAppointments(page) {
   );
 
   // Fall back to a content hash as the ID if the site doesn't expose a stable data attribute.
-  for (const appt of appointments) {
-    if (!appt.id) appt.id = hashRow(appt.rawText);
+  for (const shift of shifts) {
+    if (!shift.id) shift.id = hashRow(shift.rawText);
   }
 
-  return appointments;
+  return shifts;
 }
 
-async function findNewAppointments(page, seenSet) {
-  const appointments = await fetchAppointments(page);
-  const newOnes = appointments.filter((a) => !seenSet.has(a.id));
+async function findNewShifts(page, seenSet) {
+  const shifts = await fetchShifts(page);
+  const newOnes = shifts.filter((s) => !seenSet.has(s.id));
 
   if (newOnes.length > 0) {
-    logger.info(`Found ${newOnes.length} new appointment(s) out of ${appointments.length} total.`);
+    logger.info(`Found ${newOnes.length} new shift(s) out of ${shifts.length} total.`);
   }
 
-  return { appointments, newOnes };
+  return { shifts, newOnes };
 }
 
-module.exports = { fetchAppointments, findNewAppointments };
+module.exports = { fetchShifts, findNewShifts };

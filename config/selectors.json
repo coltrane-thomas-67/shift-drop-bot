@@ -9,15 +9,15 @@
 
   "loggedOutIndicator": "#main #user_password",
 
-  "_appointments_comment": "Verified against the live site on 2026-09-11 while there were 0 open requests: the empty state renders '<h4>There are no open appointment requests</h4>' inside '#main .col-sm-12', with no row markup at all (confirmed via page source). rowSelector below targets any non-heading element in that same container, so it matches nothing when empty and should pick up real rows once SMN posts one. idAttribute/fields are unverified best-effort guesses -- if they don't match, monitor.js falls back to the row's full text, so alerts still fire and still include full shift details even before this gets tightened up. Re-run 'node scripts/inspect-appointments.js' (see README) next time a shift is posted to confirm/adjust rowSelector and fields.",
-  "appointments": {
+  "_shifts_comment": "Verified against the live site while there were 0 open entries: the empty state renders a plain heading with no row markup at all (confirmed via page source), inside a '#main .col-sm-12' container. rowSelector below targets any non-heading element in that same container, so it matches nothing when empty and should pick up real rows once something is posted. idAttribute/fields are unverified best-effort guesses. If they don't match, monitor.js falls back to the row's full text, so alerts still fire and still include full details even before this gets tightened up. Re-check this against the live page next time an entry is posted, and adjust rowSelector and fields if needed.",
+  "shifts": {
     "rowSelector": "#main .col-sm-12 > *:not(h1):not(h4)",
     "idAttribute": null,
     "fields": {
-      "time": ".appt-time, .time",
-      "location": ".appt-location, .location",
-      "rate": ".appt-rate, .rate",
-      "family": ".appt-family, .family"
+      "time": ".shift-time, .time",
+      "location": ".shift-location, .location",
+      "rate": ".shift-rate, .rate",
+      "client": ".shift-client, .client"
     }
   }
 }

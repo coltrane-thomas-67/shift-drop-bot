@@ -6,7 +6,7 @@ const fs = require('fs');
 const logger = require('./logger');
 const state = require('./state');
 const auth = require('./auth');
-const { findNewAppointments } = require('./monitor');
+const { findNewShifts } = require('./monitor');
 const { sendShiftAlert } = require('./notify');
 
 const PRIMED_FILE = path.join(__dirname, '..', 'data', 'PRIMED');
@@ -36,17 +36,17 @@ async function runLoop(page) {
 
     try {
       await auth.ensureLoggedIn(page);
-      const { appointments, newOnes } = await findNewAppointments(page, seen);
+      const { shifts, newOnes } = await findNewShifts(page, seen);
 
       if (firstRun) {
-        logger.info(`First run: baselining ${appointments.length} existing appointment(s) without alerting.`);
+        logger.info(`First run: baselining ${shifts.length} existing shift(s) without alerting.`);
       } else {
-        for (const appt of newOnes) {
-          await sendShiftAlert(appt).catch(() => {}); // already logged inside notify.js
+        for (const shift of newOnes) {
+          await sendShiftAlert(shift).catch(() => {}); // already logged inside notify.js
         }
       }
 
-      for (const appt of appointments) seen.add(appt.id);
+      for (const shift of shifts) seen.add(shift.id);
       state.saveSeen(seen);
 
       if (firstRun) {
@@ -61,14 +61,14 @@ async function runLoop(page) {
 }
 
 async function main() {
-  const required = ['SMN_LOGIN_URL', 'SMN_APPOINTMENTS_URL', 'SMN_USERNAME', 'SMN_PASSWORD'];
+  const required = ['SITE_LOGIN_URL', 'SITE_SHIFTS_URL', 'SITE_USERNAME', 'SITE_PASSWORD'];
   const missing = required.filter((k) => !process.env[k] || process.env[k].includes('REPLACE-ME'));
   if (missing.length) {
     logger.error(`Missing/placeholder .env values: ${missing.join(', ')}. Copy .env.example to .env and fill it in.`);
     process.exit(1);
   }
 
-  logger.info('Starting SMN shift bot...');
+  logger.info('Starting shift bot...');
   const browser = await puppeteer.launch({
     headless: process.env.HEADLESS !== 'false',
     args: ['--no-sandbox', '--disable-setuid-sandbox'],

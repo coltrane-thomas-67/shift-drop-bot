@@ -1,7 +1,7 @@
 {
-  "name": "smn-shift-bot",
+  "name": "shift-drop-bot",
   "version": "1.0.0",
-  "description": "Monitors Spilt Milk Nannies Appointment Requests for new shifts and sends free SMS alerts",
+  "description": "Watches a login-gated shift board and sends free SMS alerts the moment a new shift appears",
   "main": "src/index.js",
   "type": "commonjs",
   "scripts": {
