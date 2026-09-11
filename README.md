@@ -1,51 +1,56 @@
-# SMN Shift Bot
+# Shift Drop Bot
 
-Watches your Spilt Milk Nannies "Appointment Requests" tab and texts you the
-moment a new shift appears. $0 cost: Puppeteer for browsing, a Gmail
-email-to-SMS gateway for texting, a JSON file for state.
+Supreme/sneaker-drop energy, applied to gig shifts. This watches a
+login-gated shift board for a side hustle of mine and texts me the second a
+new opening drops — no more frantically refreshing a tab all day hoping to
+catch one before someone else does. $0 to run: headless browser automation
+for checking, a free email-to-SMS relay for the text, a JSON file for state.
 
-> **Before you run this:** automating login to a third-party site can violate
-> its Terms of Service, and this uses your real SMN password. Use a check
-> interval you're comfortable with (45s default, with built-in jitter) and
-> stop the bot if SMN ever asks you to. This tool only touches your own
-> account — it doesn't do anything on your behalf beyond viewing the page.
+> **Before you run this against your own site:** automating login to a
+> third-party site can violate its Terms of Use, and this stores your real
+> login credentials locally. Use a check interval you're comfortable with
+> (45s default, with built-in random jitter so it doesn't look like a
+> perfectly robotic fixed cadence) and stop the bot if the site ever asks
+> you to. This tool only touches your own account — it doesn't do anything
+> on your behalf beyond viewing a page you're already allowed to see.
 
 ## 1. Install
 
 ```bash
-cd smn-shift-bot
+cd shift-drop-bot
 npm install
 cp .env.example .env
 ```
 
 ## 2. Find your CSS selectors
 
-I don't have access to the SMN site, so you need to tell the bot how to find
-the login form and the appointment list. This takes about 5 minutes:
+The bot doesn't know your target site's markup out of the box — you point
+it at your own login form and shift list via `config/selectors.json`. Takes
+about 5 minutes:
 
-1. Open the SMN site in Chrome, go to the login page.
+1. Open your site in Chrome, go to the login page.
 2. Right-click the username field → **Inspect**. In DevTools, right-click the
    highlighted HTML element → **Copy → Copy selector**. Paste that into
    `config/selectors.json` as `login.usernameField`.
 3. Repeat for the password field (`login.passwordField`) and the
    login/submit button (`login.submitButton`).
-4. Log in manually, go to **Appointment Requests**. Inspect one shift
-   row/card. Find a selector that matches *every* row (e.g. a repeated class
-   like `.appointment-card` or a table row) → `appointments.rowSelector`.
-5. Within one row, find selectors for the time, location, and rate text →
-   `appointments.fields`.
+4. Log in manually, go to the page that lists open shifts/requests. Inspect
+   one row/card. Find a selector that matches *every* row (e.g. a repeated
+   class or a table row) → `appointments.rowSelector`.
+5. Within one row, find selectors for whatever details matter to you (time,
+   location, rate, etc.) → `appointments.fields`.
 6. If a row has a stable unique attribute (e.g. `data-id="1234"`), set
    `appointments.idAttribute` to that attribute name. If not, leave it as
-   `null` — the bot will hash the row's text instead, which still reliably
-   detects new vs. already-seen shifts.
-7. Set `loggedOutIndicator` to a selector that's only present on the
-   login page (e.g. the password field's selector) — the bot uses this to
-   detect an expired session and re-login automatically.
+   `null` — the bot hashes the row's text instead, which still reliably
+   detects new vs. already-seen entries.
+7. Set `loggedOutIndicator` to a selector that's only present on the login
+   page (e.g. the password field's selector) — the bot uses this to detect
+   an expired session and re-login automatically.
 
 ## 3. Configure `.env`
 
-Fill in `SMN_LOGIN_URL`, `SMN_APPOINTMENTS_URL`, `SMN_USERNAME`,
-`SMN_PASSWORD`, and `ALERT_PHONE_NUMBER`.
+Fill in your site's login URL, shift-list URL, username, password, and your
+phone number (see `.env.example` for the full list of variables).
 
 For SMS, the default `NOTIFY_METHOD=emailToSms` is free forever:
 
@@ -77,11 +82,11 @@ npm start
 ```
 
 Watch the console/`logs/bot.log`. First run "primes" the bot — it records
-whatever's currently on the Appointment Requests page without texting you
-(so you don't get 30 texts for shifts that were already posted). After that,
-only genuinely new shifts trigger a text.
+whatever's currently open without texting you (so you don't get flooded
+with texts for stuff that was already posted). After that, only genuinely
+new entries trigger a text.
 
-To send yourself a one-off test text without waiting for a real shift, run:
+To send yourself a one-off test text without waiting for a real drop, run:
 
 ```bash
 node -e "require('dotenv').config(); require('./src/notify').sendShiftAlert({id:'test', time:'test', location:'123 Main St', rate:'\$25/hr'})"
@@ -108,10 +113,10 @@ stays plugged in), this is the most dependable free option:
 
 ```bash
 npm install -g pm2
-pm2 start src/index.js --name smn-bot
+pm2 start src/index.js --name shift-bot
 pm2 save
 pm2 startup   # follow the printed instructions to survive reboots
-pm2 logs smn-bot   # remote-friendly: SSH in and tail this anytime
+pm2 logs shift-bot   # remote-friendly: SSH in and tail this anytime
 ```
 
 ### Option B — Oracle Cloud "Always Free" VM (genuinely free forever)
@@ -135,8 +140,8 @@ Replit's free tier no longer includes true "Always On" background workers —
 that now requires a paid plan. Two ways to work around that for free, with
 caveats:
 
-1. Push this folder to a new Repl, set `SMN_LOGIN_URL` etc. as Replit
-   **Secrets** (not committed to the repo).
+1. Push this folder to a new Repl, set your env vars as Replit **Secrets**
+   (not committed to the repo).
 2. Add a tiny HTTP server (a few lines with Express, listening on Replit's
    assigned port) alongside the bot so the Repl counts as a "web" Repl.
 3. Use a free uptime pinger like UptimeRobot (uptimerobot.com) to hit that
@@ -148,12 +153,11 @@ primary plan.
 
 ### Option D — Railway.app (easy, free trial credit — not indefinite)
 
-Railway gives new accounts a small monthly credit, enough to run this bot
+Railway gives new accounts a one-time trial credit, enough to run this bot
 continuously for a while, but it is trial credit, not a permanent free tier:
 
 1. `railway login`, `railway init` in this folder.
-2. `railway variables set SMN_LOGIN_URL=... SMN_USERNAME=... ` (etc. for
-   every var in `.env.example`).
+2. `railway variable set KEY=VALUE` for every variable in `.env.example`.
 3. `railway up` to deploy. Railway runs `npm start` automatically.
 4. `railway logs` to monitor remotely.
 5. Watch your usage in the Railway dashboard — once the trial credit is
@@ -169,9 +173,9 @@ viewer/CLI.
 
 - `src/auth.js` — logs in, and re-logs-in automatically if the session
   expires (detected via `loggedOutIndicator`).
-- `src/monitor.js` — scrapes the appointments page using
+- `src/monitor.js` — scrapes the shift-list page using
   `config/selectors.json`, hashing each row to a stable ID.
-- `src/state.js` — tracks which appointment IDs have already been alerted on
+- `src/state.js` — tracks which entries have already been alerted on
   (`data/seen.json`), so restarts don't re-send old alerts.
 - `src/notify.js` — sends the SMS via email-to-SMS gateway or Twilio.
 - `src/index.js` — the check loop: login → scrape → diff → alert → sleep
