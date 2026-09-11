@@ -1,0 +1,18 @@
+{
+  "name": "smn-shift-bot",
+  "version": "1.0.0",
+  "description": "Monitors Spilt Milk Nannies Appointment Requests for new shifts and sends free SMS alerts",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "nodemailer": "^6.9.14",
+    "puppeteer": "^23.0.0"
+  },
+  "devDependencies": {
+    "pm2": "^7.0.4"
+  }
+}

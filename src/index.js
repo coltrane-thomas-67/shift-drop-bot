@@ -1,0 +1,97 @@
+require('dotenv').config();
+const puppeteer = require('puppeteer');
+const path = require('path');
+const fs = require('fs');
+
+const logger = require('./logger');
+const state = require('./state');
+const auth = require('./auth');
+const { findNewAppointments } = require('./monitor');
+const { sendShiftAlert } = require('./notify');
+
+const PRIMED_FILE = path.join(__dirname, '..', 'data', 'PRIMED');
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// Adds up to +/-20% random jitter around the base interval so requests
+// don't land at a perfectly robotic fixed cadence.
+function nextDelayMs() {
+  const baseSec = Number(process.env.CHECK_INTERVAL_SECONDS || 45);
+  const jitter = baseSec * 0.2 * (Math.random() * 2 - 1);
+  return Math.max(10, baseSec + jitter) * 1000;
+}
+
+async function runLoop(page) {
+  let seen = state.loadSeen();
+  const firstRun = !fs.existsSync(PRIMED_FILE);
+
+  while (true) {
+    if (state.isPaused()) {
+      logger.info('Monitoring paused (delete data/PAUSED to resume). Sleeping...');
+      await sleep(nextDelayMs());
+      continue;
+    }
+
+    try {
+      await auth.ensureLoggedIn(page);
+      const { appointments, newOnes } = await findNewAppointments(page, seen);
+
+      if (firstRun) {
+        logger.info(`First run: baselining ${appointments.length} existing appointment(s) without alerting.`);
+      } else {
+        for (const appt of newOnes) {
+          await sendShiftAlert(appt).catch(() => {}); // already logged inside notify.js
+        }
+      }
+
+      for (const appt of appointments) seen.add(appt.id);
+      state.saveSeen(seen);
+
+      if (firstRun) {
+        fs.writeFileSync(PRIMED_FILE, new Date().toISOString());
+      }
+    } catch (err) {
+      logger.error(`Check cycle failed: ${err.message}`);
+    }
+
+    await sleep(nextDelayMs());
+  }
+}
+
+async function main() {
+  const required = ['SMN_LOGIN_URL', 'SMN_APPOINTMENTS_URL', 'SMN_USERNAME', 'SMN_PASSWORD'];
+  const missing = required.filter((k) => !process.env[k] || process.env[k].includes('REPLACE-ME'));
+  if (missing.length) {
+    logger.error(`Missing/placeholder .env values: ${missing.join(', ')}. Copy .env.example to .env and fill it in.`);
+    process.exit(1);
+  }
+
+  logger.info('Starting SMN shift bot...');
+  const browser = await puppeteer.launch({
+    headless: process.env.HEADLESS !== 'false',
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+  const page = await browser.newPage();
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+  );
+
+  await auth.login(page);
+
+  const shutdown = async () => {
+    logger.info('Shutting down...');
+    await browser.close();
+    process.exit(0);
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+
+  await runLoop(page);
+}
+
+main().catch((err) => {
+  logger.error(`Fatal error: ${err.stack || err.message}`);
+  process.exit(1);
+});

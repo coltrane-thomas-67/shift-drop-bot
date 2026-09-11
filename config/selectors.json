@@ -1,0 +1,23 @@
+{
+  "_comment": "Fill these in using your browser's DevTools inspector. See README 'Finding your selectors'.",
+
+  "login": {
+    "usernameField": "#main #user_email",
+    "passwordField": "#main #user_password",
+    "submitButton": "#main input[name=commit]"
+  },
+
+  "loggedOutIndicator": "#main #user_password",
+
+  "_appointments_comment": "Verified against the live site on 2026-09-11 while there were 0 open requests: the empty state renders '<h4>There are no open appointment requests</h4>' inside '#main .col-sm-12', with no row markup at all (confirmed via page source). rowSelector below targets any non-heading element in that same container, so it matches nothing when empty and should pick up real rows once SMN posts one. idAttribute/fields are unverified best-effort guesses -- if they don't match, monitor.js falls back to the row's full text, so alerts still fire and still include full shift details even before this gets tightened up. Re-run 'node scripts/inspect-appointments.js' (see README) next time a shift is posted to confirm/adjust rowSelector and fields.",
+  "appointments": {
+    "rowSelector": "#main .col-sm-12 > *:not(h1):not(h4)",
+    "idAttribute": null,
+    "fields": {
+      "time": ".appt-time, .time",
+      "location": ".appt-location, .location",
+      "rate": ".appt-rate, .rate",
+      "family": ".appt-family, .family"
+    }
+  }
+}
