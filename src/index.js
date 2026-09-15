@@ -94,20 +94,6 @@ async function main() {
 
   await auth.login(page);
 
-  // Temporary diagnostic hook: set SEND_TEST_ALERT=true to fire one real test
-  // text on startup, to verify the notification path actually works from this
-  // specific host's network without waiting for a real shift to appear.
-  if (process.env.SEND_TEST_ALERT === 'true') {
-    logger.info('SEND_TEST_ALERT is set, sending a one-off test alert...');
-    await withTimeout(
-      sendShiftAlert({ id: 'diagnostic-test', time: 'diagnostic test', location: 'n/a', rate: 'n/a' }),
-      30000,
-      'diagnostic sendShiftAlert'
-    ).catch((err) => {
-      logger.error(`Diagnostic test alert failed: ${err.message}`);
-    });
-  }
-
   const shutdown = async () => {
     logger.info('Shutting down...');
     await browser.close();
