@@ -15,6 +15,17 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// A stuck network call inside sendShiftAlert must never be able to freeze
+// the whole monitoring loop forever. Cap it hard as a last line of defense,
+// on top of whatever timeout the notification method itself sets.
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 // Adds up to +/-20% random jitter around the base interval so requests
 // don't land at a perfectly robotic fixed cadence.
 function nextDelayMs() {
@@ -42,7 +53,9 @@ async function runLoop(page) {
         logger.info(`First run: baselining ${shifts.length} existing shift(s) without alerting.`);
       } else {
         for (const shift of newOnes) {
-          await sendShiftAlert(shift).catch(() => {}); // already logged inside notify.js
+          await withTimeout(sendShiftAlert(shift), 30000, `sendShiftAlert(${shift.id})`).catch((err) => {
+            logger.error(`Alert failed or timed out for ${shift.id}: ${err.message}`);
+          });
         }
       }
 

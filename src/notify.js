@@ -27,6 +27,11 @@ async function sendViaEmailToSms(shift) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: { user: GMAIL_USER, pass: GMAIL_APP_PASSWORD },
+    // Some hosts silently drop outbound SMTP instead of refusing it, which
+    // leaves this hanging forever with no error. Fail fast instead.
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
   });
 
   const to = `${ALERT_PHONE_NUMBER}@${CARRIER_GATEWAY}`;
