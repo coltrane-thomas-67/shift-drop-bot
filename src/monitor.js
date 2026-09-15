@@ -18,7 +18,7 @@ async function fetchShifts(page) {
       return rows.map((row) => {
         const getField = (sel) => {
           const el = row.querySelector(sel);
-          return el ? el.textContent.trim() : '';
+          return el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
         };
         const out = {
           id: idAttribute ? row.getAttribute(idAttribute) : null,

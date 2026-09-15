@@ -25,7 +25,7 @@ function nextDelayMs() {
 
 async function runLoop(page) {
   let seen = state.loadSeen();
-  const firstRun = !fs.existsSync(PRIMED_FILE);
+  let firstRun = !fs.existsSync(PRIMED_FILE);
 
   while (true) {
     if (state.isPaused()) {
@@ -51,6 +51,7 @@ async function runLoop(page) {
 
       if (firstRun) {
         fs.writeFileSync(PRIMED_FILE, new Date().toISOString());
+        firstRun = false;
       }
     } catch (err) {
       logger.error(`Check cycle failed: ${err.message}`);

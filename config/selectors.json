@@ -9,15 +9,15 @@
 
   "loggedOutIndicator": "#main #user_password",
 
-  "_shifts_comment": "Verified against the live site while there were 0 open entries: the empty state renders a plain heading with no row markup at all (confirmed via page source), inside a '#main .col-sm-12' container. rowSelector below targets any non-heading element in that same container, so it matches nothing when empty and should pick up real rows once something is posted. idAttribute/fields are unverified best-effort guesses. If they don't match, monitor.js falls back to the row's full text, so alerts still fire and still include full details even before this gets tightened up. Re-check this against the live page next time an entry is posted, and adjust rowSelector and fields if needed.",
+  "_shifts_comment": "Verified against a live entry on the real site (previous version of this file was an unverified guess made while the list was empty, and it wrongly matched section headers and empty spacer divs in addition to real rows, badly inflating counts). Each entry is a direct-child '.row.col-sm-12' block inside the page's outer '.col-sm-12' container; a nested '.row.col-sm-12' also exists one level deeper inside each entry for layout purposes, so the '>' direct-child combinator is required to avoid matching it twice. No pay rate is shown anywhere on this page, so that field is expected to stay empty.",
   "shifts": {
-    "rowSelector": "#main .col-sm-12 > *:not(h1):not(h4)",
+    "rowSelector": "#main .col-sm-12 > .row.col-sm-12",
     "idAttribute": null,
     "fields": {
-      "time": ".shift-time, .time",
-      "location": ".shift-location, .location",
+      "time": ".col-sm-5 b",
+      "location": ".distance-estimate",
       "rate": ".shift-rate, .rate",
-      "client": ".shift-client, .client"
+      "client": ".col-sm-2 a"
     }
   }
 }
